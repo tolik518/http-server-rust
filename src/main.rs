@@ -61,7 +61,7 @@ fn response_builder(code: u16, content: &str) -> Vec<u8> {
     let status_line = format!("HTTP/1.1 {code} {code_status}\r\n");
 
     let response_string = format!(
-        "{status_line}{headers}\r\n{content}\r\n",
+        "{status_line}{headers}\r\n{content}",
         status_line = status_line,
         headers = headers
             .iter()
