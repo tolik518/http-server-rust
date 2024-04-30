@@ -64,7 +64,7 @@ fn response_builder(code: u16, content: &str) -> Vec<u8> {
 
     let content_length = content.len().to_string();
     let headers = vec![
-        ("Content-Type", "text/html"),
+        ("Content-Type", "text/plain"),
         ("Content-Length", &*content_length),
     ];
 
