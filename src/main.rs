@@ -31,6 +31,12 @@ fn main() {
                             .write_all(&*response_builder(200, ""))
                             .unwrap();
                     }
+                    "/user-agent" => {
+                        let user_agent = &request.headers.iter().find(|(k, _)| k == "User-Agent").unwrap().1;
+                        tcp_stream
+                            .write_all(&*response_builder(200, user_agent))
+                            .unwrap();
+                    }
                     _ if request.path.starts_with("/echo/") => {
                         let echo = &request.path.split("/").collect::<Vec<&str>>();
                         let echo = *echo.last().unwrap();
