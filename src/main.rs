@@ -27,11 +27,11 @@ fn main() {
 
                 if request.path == "/" {
                     tcp_stream
-                        .write_all(&*response_builder(200, "OK"))
+                        .write_all(&*response_builder(200, "abc"))
                         .unwrap();
                 } else {
                     tcp_stream
-                        .write_all(&*response_builder(404, "Not Found"))
+                        .write_all(&*response_builder(404, ""))
                         .unwrap();
                 }
 
@@ -45,8 +45,33 @@ fn main() {
     println!("==== Program finished ====");
 }
 
-fn response_builder(code: u16, code_status: &str) -> Vec<u8> {
-    return format!("HTTP/1.1 {code} {code_status}\r\n\r\n").as_bytes().to_owned();
+fn response_builder(code: u16, content: &str) -> Vec<u8> {
+    let code_status = match code {
+        200 => "OK",
+        404 => "Not Found",
+        _ => "Internal Server Error"
+    };
+
+    let content_length = content.len().to_string();
+    let headers = vec![
+        ("Content-Type", "text/html"),
+        ("Content-Length", &*content_length),
+    ];
+
+    let status_line = format!("HTTP/1.1 {code} {code_status}\r\n");
+
+    let response_string = format!(
+        "{status_line}{headers}\r\n{content}\r\n",
+        status_line = status_line,
+        headers = headers
+            .iter()
+            .map(|(k, v)| format!("{k}: {v}\r\n"))
+            .join(""),
+        content = content
+    );
+    println!("Response: ");
+    println!("{}", response_string);
+    return response_string.as_bytes().to_owned();
 }
 
 fn get_client_request_data(tcp_stream: &mut &TcpStream) -> String {
