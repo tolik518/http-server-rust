@@ -25,14 +25,24 @@ fn main() {
                 let request = get_client_request_data(&mut tcp_stream);
                 let request = parse_request(request.trim());
 
-                if request.path == "/" {
-                    tcp_stream
-                        .write_all(&*response_builder(200, "abc"))
-                        .unwrap();
-                } else {
-                    tcp_stream
-                        .write_all(&*response_builder(404, ""))
-                        .unwrap();
+                match request.path.as_str() {
+                    "/" => {
+                        tcp_stream
+                            .write_all(&*response_builder(200, ""))
+                            .unwrap();
+                    }
+                    _ if request.path.starts_with("/echo/") => {
+                        let echo = &request.path.split("/").collect::<Vec<&str>>();
+                        let echo = *echo.last().unwrap();
+                        tcp_stream
+                            .write_all(&*response_builder(200, echo))
+                            .unwrap();
+                    }
+                    _ => {
+                        tcp_stream
+                            .write_all(&*response_builder(404, ""))
+                            .unwrap();
+                    }
                 }
 
             }
