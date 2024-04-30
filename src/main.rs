@@ -27,11 +27,11 @@ fn main() {
 
                 if request.path == "/" {
                     tcp_stream
-                        .write_all(response_builder(200, "OK"))
+                        .write_all(&*response_builder(200, "OK"))
                         .unwrap();
                 } else {
                     tcp_stream
-                        .write_all(response_builder(404, "Not Found"))
+                        .write_all(&*response_builder(404, "Not Found"))
                         .unwrap();
                 }
 
@@ -45,9 +45,8 @@ fn main() {
     println!("==== Program finished ====");
 }
 
-fn response_builder(code: u16, code_status: &str) -> &[u8] {
-    let response = format!{"HTTP/1.1 {code} {code_status}\r\n\r\n"};
-    return response.as_bytes();
+fn response_builder(code: u16, code_status: &str) -> Vec<u8> {
+    return format!("HTTP/1.1 {code} {code_status}\r\n\r\n").as_bytes().to_owned();
 }
 
 fn get_client_request_data(tcp_stream: &mut &TcpStream) -> String {
