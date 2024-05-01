@@ -9,6 +9,7 @@ use status_code::StatusCode;
 use std::io::{Read, Write};
 use std::net::TcpListener;
 use std::net::TcpStream;
+use std::thread;
 use itertools::Itertools;
 
 
@@ -18,19 +19,20 @@ fn main() {
     let listener = TcpListener::bind("127.0.0.1:4221").unwrap();
 
     for stream in listener.incoming() {
-        let stream = stream.expect("Error in the stream!");
+        thread::spawn(|| {
+            let stream = stream.expect("Error in the stream!");
 
-        let mut tcp_stream = &stream;
+            let mut tcp_stream = &stream;
 
-        let request = Request::from_tcp_stream(&mut tcp_stream);
+            let request = Request::from_tcp_stream(&mut tcp_stream);
 
-        match request.path.as_str() {
-            "/" => home_action(&mut tcp_stream),
-            "/user-agent" => user_agent_action(&mut tcp_stream, &request),
-            _ if request.path.starts_with("/echo/") => echo_action(&mut tcp_stream, &request),
-            _ => not_found_action(&mut tcp_stream)
-        }
-
+            match request.path.as_str() {
+                "/" => home_action(&mut tcp_stream),
+                "/user-agent" => user_agent_action(&mut tcp_stream, &request),
+                _ if request.path.starts_with("/echo/") => echo_action(&mut tcp_stream, &request),
+                _ => not_found_action(&mut tcp_stream)
+            }
+        });
     }
 
     println!("==== Program finished ====");
