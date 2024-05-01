@@ -14,5 +14,7 @@ and more.
 **Note**: If you're viewing this repo on GitHub, head over to
 [codecrafters.io](https://codecrafters.io) to try the challenge.
 
+___
 
 All of the stages were cleared in the repo, but, especially, the `request.rs` is not optimized at all.  
+It would have been better to use `.seek(&mut buf)` than working with `tcp_stream.bytes()` directly
