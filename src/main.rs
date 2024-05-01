@@ -6,12 +6,10 @@ use request::Request;
 use response::Response;
 use status_code::StatusCode;
 
-use std::io::{Read, Write};
+use std::io::Write;
 use std::net::TcpListener;
 use std::net::TcpStream;
 use std::thread;
-use itertools::Itertools;
-
 
 fn main() {
     println!("==== Program running ====");

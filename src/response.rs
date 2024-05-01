@@ -61,7 +61,7 @@ impl Response {
             .join("");
 
         let response_string = format!(
-            "{status_line}{headers}\r\n\r\n{body}",
+            "{status_line}{headers}\r\n{body}",
             status_line = status_line,
             headers = headers,
             body = self.body
