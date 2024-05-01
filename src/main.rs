@@ -91,7 +91,7 @@ fn write_file(tcp_stream: &mut &TcpStream, request: &Request, files_dir: &str) {
 
     tcp_stream
         .write_all(&*Response::new()
-            .set_status_code(&StatusCode::Ok)
+            .set_status_code(&StatusCode::Created)
             .set_content_type("application/octet-stream")
             .set_body(file_content.to_string())
             .to_bytes())
