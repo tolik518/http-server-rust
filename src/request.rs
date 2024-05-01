@@ -78,8 +78,12 @@ impl Request {
             } else if header_written {
                 break;
             }
-
         }
+        body_data = body_data
+            .lines()
+            .skip(1)
+            .collect::<Vec<&str>>()
+            .join("\n");
 
         request.body = body_data;
 
