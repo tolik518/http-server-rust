@@ -1,4 +1,4 @@
-[![progress-banner](https://backend.codecrafters.io/progress/http-server/daf9d874-2bd7-42a3-a62c-629c23aeb4c6)](https://app.codecrafters.io/users/codecrafters-bot?r=2qF)
+[![progress-banner](https://backend.codecrafters.io/progress/http-server/daf9d874-2bd7-42a3-a62c-629c23aeb4c6)](c
 
 This is a starting point for Rust solutions to the
 ["Build Your Own HTTP server" Challenge](https://app.codecrafters.io/r/victorious-pig-708556).
