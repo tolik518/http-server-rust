@@ -1,7 +1,8 @@
 pub(crate) enum StatusCode {
     Ok,
     NotFound,
-    InternalServerError
+    InternalServerError,
+    Conflict,
 }
 
 impl StatusCode {
@@ -9,6 +10,7 @@ impl StatusCode {
         match self {
             StatusCode::Ok => 200,
             StatusCode::NotFound => 404,
+            StatusCode::Conflict => 409,
             StatusCode::InternalServerError => 500
         }
     }
@@ -17,7 +19,8 @@ impl StatusCode {
         match self {
             StatusCode::Ok => "OK".to_string(),
             StatusCode::NotFound => "Not Found".to_string(),
-            StatusCode::InternalServerError => "Internal Server Error".to_string()
+            StatusCode::Conflict => "Conflict".to_string(),
+            StatusCode::InternalServerError => "Internal Server Error".to_string(),
         }
     }
 }

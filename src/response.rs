@@ -67,7 +67,6 @@ impl Response {
             body = self.body
         );
 
-        println!("{}", response_string);
         return response_string.as_bytes().to_owned();
     }
 }

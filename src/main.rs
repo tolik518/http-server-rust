@@ -66,6 +66,39 @@ fn not_found_action(tcp_stream: &mut &TcpStream) {
 }
 
 fn directory_action(tcp_stream: &mut &TcpStream, request: &Request, files_dir: &str) {
+    match request.method.as_str() {
+        "GET" => print_file(tcp_stream, request, files_dir),
+        "POST" => write_file(tcp_stream, request, files_dir),
+        _ => not_found_action(tcp_stream)
+    }
+}
+fn write_file(tcp_stream: &mut &TcpStream, request: &Request, files_dir: &str) {
+    let file = &request.path
+        .split("/")
+        .collect::<Vec<&str>>();
+
+    // get only the last element, which is the file name
+    let file_name = *file.last().unwrap();
+
+    // Check if the file exists
+    let file_path = format!("{}{}{}", files_dir, MAIN_SEPARATOR, file_name);
+
+    // read the body of the request and write it to the file
+    let file_content = &request.body;
+
+    //create new file and write the content
+    std::fs::write(file_path, file_content).unwrap_or_default();
+
+    tcp_stream
+        .write_all(&*Response::new()
+            .set_status_code(&StatusCode::Ok)
+            .set_content_type("application/octet-stream")
+            .set_body(file_content.to_string())
+            .to_bytes())
+        .unwrap();
+}
+
+fn print_file(tcp_stream: &mut &TcpStream, request: &Request, files_dir: &str) {
     let file = &request.path
         .split("/")
         .collect::<Vec<&str>>();
