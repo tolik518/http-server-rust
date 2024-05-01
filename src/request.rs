@@ -48,7 +48,12 @@ impl Request {
         request.version = first_line_parts.next().unwrap().to_string();
 
         for line in lines {
-            let header_parts: Vec<&str> = line.trim().split(": ").collect();
+            let header_parts: Vec<&str> = line
+                .trim()
+                .split(": ")
+                .collect();
+            // headers are should always be key-value pairs, #
+            // but we don't want to panic when we dont have 2 parts
             if header_parts.len() == 2 {
                 request.headers.push((
                     header_parts[0].to_string(),
