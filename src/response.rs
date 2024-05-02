@@ -34,6 +34,10 @@ impl Response {
         self
     }
 
+    pub(crate) fn get_status_code(&self) -> u16 {
+        self.status_code
+    }
+
     pub(crate) fn set_content_type(&mut self, content_type: &str) -> &mut Self {
         self.headers.push(("Content-Type".to_string(), content_type.to_string()));
         self
