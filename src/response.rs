@@ -7,6 +7,17 @@ pub(crate) struct Response {
     body: String
 }
 
+impl Clone for Response {
+    fn clone(&self) -> Self {
+        Response {
+            status_code: self.status_code,
+            status_text: self.status_text.clone(),
+            headers: self.headers.clone(),
+            body: self.body.clone()
+        }
+    }
+}
+
 impl Response {
     pub fn new() -> Self {
         Response {

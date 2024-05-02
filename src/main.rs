@@ -13,6 +13,7 @@ use std::net::TcpStream;
 use std::thread;
 use std::env;
 use std::sync::{Arc, Mutex};
+use itertools::Itertools;
 
 fn main() {
     println!("==== Server running ====");
@@ -44,35 +45,45 @@ fn main() {
 
             let request = Request::from_tcp_stream(&mut tcp_stream);
 
-            match request.path.as_str() {
+            let response: Response = match request.path.as_str() {
                 "/" => home_action(&mut tcp_stream),
                 "/user-agent" => user_agent_action(&mut tcp_stream, &request),
                 _ if request.path.starts_with("/echo/") => echo_action(&mut tcp_stream, &request),
                 _ if request.path.starts_with("/files/") => directory_action(&mut tcp_stream, &request, &files_dir.lock().unwrap()),
                 _ => not_found_action(&mut tcp_stream)
-            }
+            };
+
+            // get current date and time and print it to the console
+            let time = chrono::Local::now().format("%Y-%m-%d %H:%M:%S").to_string();
+            println!("[{}] {} - {} {}", time, response.get_status_code(), request.method, request.path);
+
         });
     }
 
     println!("==== Server finished ====");
 }
 
-fn not_found_action(tcp_stream: &mut &TcpStream) {
+fn not_found_action(tcp_stream: &mut &TcpStream) -> Response {
+
+    let mut response = Response::new();
+    let response = response
+        .set_status_code(&StatusCode::NotFound);
+
     tcp_stream
-        .write_all(&*Response::new()
-            .set_status_code(&StatusCode::NotFound)
-            .to_bytes())
+        .write_all(&response.to_bytes())
         .unwrap();
+
+    return response.clone();
 }
 
-fn directory_action(tcp_stream: &mut &TcpStream, request: &Request, files_dir: &str) {
+fn directory_action<'a>(tcp_stream: &mut &TcpStream, request: &Request, files_dir: &str) -> Response  {
     match request.method.as_str() {
         "GET" => print_file(tcp_stream, request, files_dir),
         "POST" => write_file(tcp_stream, request, files_dir),
         _ => not_found_action(tcp_stream)
     }
 }
-fn write_file(tcp_stream: &mut &TcpStream, request: &Request, files_dir: &str) {
+fn write_file(tcp_stream: &mut &TcpStream, request: &Request, files_dir: &str) -> Response {
     let file = &request.path
         .split("/")
         .collect::<Vec<&str>>();
@@ -89,16 +100,20 @@ fn write_file(tcp_stream: &mut &TcpStream, request: &Request, files_dir: &str) {
     //create new file and write the content
     std::fs::write(file_path, file_content).unwrap_or_default();
 
+    let mut response = Response::new();
+    let response = response
+        .set_status_code(&StatusCode::Created)
+        .set_content_type("application/octet-stream")
+        .set_body(file_content.to_string());
+
     tcp_stream
-        .write_all(&*Response::new()
-            .set_status_code(&StatusCode::Created)
-            .set_content_type("application/octet-stream")
-            .set_body(file_content.to_string())
-            .to_bytes())
+        .write_all(&*response.to_bytes())
         .unwrap();
+
+    response.clone()
 }
 
-fn print_file(tcp_stream: &mut &TcpStream, request: &Request, files_dir: &str) {
+fn print_file(tcp_stream: &mut &TcpStream, request: &Request, files_dir: &str) -> Response {
     let file = &request.path
         .split("/")
         .collect::<Vec<&str>>();
@@ -115,49 +130,66 @@ fn print_file(tcp_stream: &mut &TcpStream, request: &Request, files_dir: &str) {
     // read file content
     let file_content = std::fs::read_to_string(file_path).unwrap();
 
+    let mut response = Response::new();
+    let response = response
+        .set_status_code(&StatusCode::Ok)
+        .set_content_type("application/octet-stream")
+        .set_body(file_content.to_string());
+
     tcp_stream
-        .write_all(&*Response::new()
-            .set_status_code(&StatusCode::Ok)
-            .set_content_type("application/octet-stream")
-            .set_body(file_content.to_string())
-            .to_bytes())
+        .write_all(&*response.to_bytes())
         .unwrap();
+
+    response.clone()
 }
 
-fn echo_action(tcp_stream: &mut &TcpStream, request: &Request) {
+fn echo_action(tcp_stream: &mut &TcpStream, request: &Request) -> Response {
     let echo = &request.path
         .split("/").
         collect::<Vec<&str>>();
     // get only the last element, which we want to echo
     let echo = *echo.last().unwrap();
 
+    let mut response = Response::new();
+    let response = response
+        .set_status_code(&StatusCode::Ok)
+        .set_body(echo.to_string());
+
     tcp_stream
-        .write_all(&*Response::new()
-            .set_status_code(&StatusCode::Ok)
-            .set_body(echo.to_string())
-            .to_bytes())
+        .write_all(&*response.to_bytes())
         .unwrap();
+
+    response.clone()
 }
 
-fn user_agent_action(tcp_stream: &mut &TcpStream, request: &Request) {
+fn user_agent_action(tcp_stream: &mut &TcpStream, request: &Request) -> Response {
     let user_agent = &request.headers
         .iter()
         .find(|(k, _)| k == "User-Agent")
         .unwrap().1;
 
+    let mut response = Response::new();
+    let response = response
+        .set_status_code(&StatusCode::Ok)
+        .set_body(user_agent.to_string());
+
     tcp_stream
-        .write_all(&*Response::new()
-            .set_status_code(&StatusCode::Ok)
-            .set_body(user_agent.to_string())
-            .to_bytes())
+        .write_all(&*response.to_bytes())
         .unwrap();
+
+    response.clone()
 }
 
-fn home_action(tcp_stream: &mut &TcpStream) {
+fn home_action(tcp_stream: &mut &TcpStream) -> Response {
+    let mut response = Response::new();
+    let response = response
+        .set_status_code(&StatusCode::Ok)
+        .set_body("Welcome to the home page!".to_string());
+
     tcp_stream
-        .write_all(&*Response::new()
-            .set_status_code(&StatusCode::Ok)
-            .to_bytes())
+        .write_all(&*response.to_bytes())
         .unwrap();
+
+    response.clone()
 }
 
