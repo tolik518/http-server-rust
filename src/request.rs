@@ -9,20 +9,48 @@ pub(crate) struct Request {
     pub(crate) headers: Vec<(String, String)>,
     pub(crate) body: String
 }
-
+// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+// this impl is a complete mess and needs to be refactored very badly
+// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 impl Request {
     pub fn from_tcp_stream(tcp_stream:&mut &TcpStream) -> Request {
         Request::parse_request(tcp_stream)
     }
 
-    // this function is a complete mess and needs to be refactored very badly
     fn parse_request(tcp_stream: &mut &TcpStream) -> Request {
+        let (client_request, mut headers, mut body) = Self::get_client_request_and_body_and_headers(tcp_stream);
+
+        body = body
+            .lines()
+            .skip(1)
+            .collect::<Vec<&str>>()
+            .join("\n");
+
+        let first_line = client_request.lines().next().unwrap();
+
+        let mut first_line_parts = first_line.split_whitespace();
+        let method = first_line_parts.next().unwrap().to_string();
+        let path = first_line_parts.next().unwrap().to_string();
+        let version = first_line_parts.next().unwrap().to_string();
+
+        return Request {
+            method,
+            path,
+            version,
+            headers,
+            body
+        };
+    }
+
+    fn get_client_request_and_body_and_headers(
+        tcp_stream: &mut &TcpStream,
+    ) -> (String, Vec<(String, String)>, String) {
         let mut client_request = String::new();
+        let mut headers: Vec<(String, String)> = Vec::new();
         let mut buffer: Vec<char> = Vec::new();
         let mut header_written = false;
         let mut body = String::new();
         let mut current_content_length = 0;
-        let mut headers: Vec<(String, String)> = Vec::new();
 
         for byte in tcp_stream.bytes() {
             let byte = byte.unwrap_or_default();
@@ -52,7 +80,7 @@ impl Request {
             }
 
             // if we have a content-length header, we need to read the body, but only if
-            if header_written && headers.iter().any(|(k, _)| k == "Content-Length"){
+            if header_written && headers.iter().any(|(k, _)| k == "Content-Length") {
                 // as long as current_content_length is not content_length, we keep reading
                 let content_length = headers
                     .iter()
@@ -72,41 +100,7 @@ impl Request {
                 break;
             }
         }
-        body = body
-            .lines()
-            .skip(1)
-            .collect::<Vec<&str>>()
-            .join("\n");
 
-        let mut lines = client_request.lines();
-        let first_line = lines.next().unwrap();
-
-        let mut first_line_parts = first_line.split_whitespace();
-        let method = first_line_parts.next().unwrap().to_string();
-        let path = first_line_parts.next().unwrap().to_string();
-        let version = first_line_parts.next().unwrap().to_string();
-
-        for line in lines {
-            let header_parts: Vec<&str> = line
-                .trim()
-                .split(": ")
-                .collect();
-            // headers are should always be key-value pairs, #
-            // but we don't want to panic when we dont have 2 parts
-            if header_parts.len() == 2 {
-                headers.push((
-                    header_parts[0].to_string(),
-                    header_parts[1].to_string()
-                ));
-            }
-        }
-
-        return Request {
-            method,
-            path,
-            version,
-            headers,
-            body
-        };
+        (client_request, headers, body)
     }
 }
