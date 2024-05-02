@@ -64,8 +64,8 @@ fn main() {
 }
 
 fn not_found_action(tcp_stream: &mut &TcpStream) -> Response {
-
     let mut response = Response::new();
+
     let response = response
         .set_status_code(&StatusCode::NotFound);
 
@@ -84,6 +84,8 @@ fn directory_action<'a>(tcp_stream: &mut &TcpStream, request: &Request, files_di
     }
 }
 fn write_file(tcp_stream: &mut &TcpStream, request: &Request, files_dir: &str) -> Response {
+    let mut response = Response::new();
+
     let file = &request.path
         .split("/")
         .collect::<Vec<&str>>();
@@ -93,6 +95,17 @@ fn write_file(tcp_stream: &mut &TcpStream, request: &Request, files_dir: &str) -
 
     // Check if the file exists
     let file_path = format!("{}{}{}", files_dir, MAIN_SEPARATOR, file_name);
+    if Path::new(&file_path).exists() {
+        let response = response
+            .set_status_code(&StatusCode::Conflict)
+            .set_body("File already exists!".to_string());
+
+        tcp_stream
+            .write_all(&*response.to_bytes())
+            .unwrap();
+
+        return response.clone()
+    }
 
     // read the body of the request and write it to the file
     let file_content = &request.body;
@@ -100,7 +113,6 @@ fn write_file(tcp_stream: &mut &TcpStream, request: &Request, files_dir: &str) -
     //create new file and write the content
     std::fs::write(file_path, file_content).unwrap_or_default();
 
-    let mut response = Response::new();
     let response = response
         .set_status_code(&StatusCode::Created)
         .set_content_type("application/octet-stream")
@@ -114,6 +126,8 @@ fn write_file(tcp_stream: &mut &TcpStream, request: &Request, files_dir: &str) -
 }
 
 fn print_file(tcp_stream: &mut &TcpStream, request: &Request, files_dir: &str) -> Response {
+    let mut response = Response::new();
+
     let file = &request.path
         .split("/")
         .collect::<Vec<&str>>();
@@ -130,7 +144,6 @@ fn print_file(tcp_stream: &mut &TcpStream, request: &Request, files_dir: &str) -
     // read file content
     let file_content = std::fs::read_to_string(file_path).unwrap();
 
-    let mut response = Response::new();
     let response = response
         .set_status_code(&StatusCode::Ok)
         .set_content_type("application/octet-stream")
@@ -144,13 +157,14 @@ fn print_file(tcp_stream: &mut &TcpStream, request: &Request, files_dir: &str) -
 }
 
 fn echo_action(tcp_stream: &mut &TcpStream, request: &Request) -> Response {
+    let mut response = Response::new();
+
     let echo = &request.path
         .split("/").
         collect::<Vec<&str>>();
     // get only the last element, which we want to echo
     let echo = *echo.last().unwrap();
 
-    let mut response = Response::new();
     let response = response
         .set_status_code(&StatusCode::Ok)
         .set_body(echo.to_string());
@@ -163,12 +177,13 @@ fn echo_action(tcp_stream: &mut &TcpStream, request: &Request) -> Response {
 }
 
 fn user_agent_action(tcp_stream: &mut &TcpStream, request: &Request) -> Response {
+    let mut response = Response::new();
+
     let user_agent = &request.headers
         .iter()
         .find(|(k, _)| k == "User-Agent")
         .unwrap().1;
 
-    let mut response = Response::new();
     let response = response
         .set_status_code(&StatusCode::Ok)
         .set_body(user_agent.to_string());
@@ -182,6 +197,7 @@ fn user_agent_action(tcp_stream: &mut &TcpStream, request: &Request) -> Response
 
 fn home_action(tcp_stream: &mut &TcpStream) -> Response {
     let mut response = Response::new();
+
     let response = response
         .set_status_code(&StatusCode::Ok)
         .set_body("Welcome to the home page!".to_string());
